@@ -1,6 +1,7 @@
 ## Validation
 
-An App for Validation for Name Fields
+Automate data standardisation across your ERPNext fields. 
+Ensure clean and consistent names, addresses, and batch names with DataStandardiser.
 
 #### License
 
