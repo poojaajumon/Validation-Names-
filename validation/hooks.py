@@ -52,6 +52,7 @@ doctype_js = {
     "Employee" : "public/js/employee_name.js",
     "Item" : "public/js/item_name.js",
     "Item Group" : "public/js/item_group.js"
+    
 }
 
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -147,13 +148,32 @@ doctype_js = {
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+# hooks.py
+
+doc_events = {
+    "Item": {
+        "before_save": "validation.events.item.before_save"
+    },
+     "Customer": {
+        "before_save": "validation.events.customer.before_save"
+    },
+     "Supplier": {
+        "before_save": "validation.events.supplier.before_save"
+    },
+    "Item Group": {
+        "before_save": "validation.events.item_group.before_save"
+    },
+    "Address": {
+        "before_save": "validation.events.address.before_save"
+    },
+    "Contact": {
+        "before_save": "validation.events.contact.before_save"
+    },
+    "Employee": {
+        "before_save": "validation.events.employee.before_save"
+    }
+}
+
 
 # Scheduled Tasks
 # ---------------

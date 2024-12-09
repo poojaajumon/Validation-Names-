@@ -1,0 +1,55 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "DICT-.#####",
+ "creation": "2024-12-03 13:47:33.641577",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "found_word",
+  "column_break_iuez",
+  "actual_word"
+ ],
+ "fields": [
+  {
+   "fieldname": "found_word",
+   "fieldtype": "Data",
+   "label": "Found Word"
+  },
+  {
+   "fieldname": "column_break_iuez",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "actual_word",
+   "fieldtype": "Data",
+   "label": "Actual Word"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-12-07 14:09:07.531887",
+ "modified_by": "Administrator",
+ "module": "Validation",
+ "name": "Dictionary",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "found_word"
+}

@@ -103,3 +103,116 @@ function check_automation_enabled(frm, callback) {
         }
     });
 }
+
+
+// suggestions from Dictionary
+
+frappe.ui.form.on("Contact", {
+    
+    onload: function(frm) {
+        if (frm.is_new()) {
+            console.log("Script Loaded")
+            frm.set_value('custom_automate', 0); // Set custom_automate to 0 for new forms
+        }
+
+        if (!frm.doc.custom_automate) {
+            checkAutomationEnabled(frm, function(is_enabled) {
+                if (is_enabled) {
+                    applyContactNameCorrections(frm);
+                }
+            });
+        }
+    },
+
+    address: function(frm) {
+        frappe.confirm(
+            'Do you want to create a new dictionary entry for name?',
+            function() {
+                // Redirect to Dictionary doctype if user clicks 'Yes'
+                frappe.set_route('Form', 'Dictionary', 'new');
+            },
+            function() {
+                // User clicked 'No', do nothing
+            }
+        );
+    },
+
+    save: function(frm) {
+        if (!frm.doc.custom_automate) {
+            checkAutomationEnabled(frm, function(is_enabled) {
+                if (is_enabled) {
+                    applyContactNameCorrections(frm);
+
+                    // After applying corrections, set custom_automate to 1
+                    frm.set_value('custom_automate', 1);
+
+                    // Save the form to persist changes
+                    frm.save()
+                        .then(() => {
+                            console.log("custom_automate has been enabled and saved.");
+                        })
+                        .catch((error) => {
+                            console.error("Error while saving the form:", error);
+                        });
+                }
+            });
+        }
+    },
+
+    
+    first_name: function(frm) {
+        if (!frm.doc.custom_automate) {
+            checkAutomationEnabled(frm, function(is_enabled) {
+                if (is_enabled) {
+                    applyContactNameCorrections(frm);
+                }
+            });
+        }
+    }
+});
+
+// Function to apply the corrections from the Dictionary to supplier_name
+function applyContactNameCorrections(frm) {
+    frappe.call({
+        method: "frappe.client.get_list",
+        args: {
+            doctype: "Dictionary",
+            fields: ["found_word", "actual_word"],
+        },
+        callback: function(response) {
+            if (response.message) {
+                const corrections = response.message.reduce((acc, d) => {
+                    acc[d.found_word] = d.actual_word;
+                    return acc;
+                }, {});
+
+                if (corrections) {
+                    const field = "first_name";
+                    if (frm.doc[field]) {
+                        let updated_name = frm.doc[field];
+                        for (const [incorrect, corrected] of Object.entries(corrections)) {
+                            updated_name = updated_name.replace(incorrect, corrected);
+                        }
+                        frm.set_value(field, updated_name);
+                    }
+                }
+            }
+        },
+    });
+}
+
+// Function to check if automation is enabled globally
+function checkAutomationEnabled(frm, callback) {
+    frappe.call({
+        method: 'frappe.client.get_value',
+        args: {
+            doctype: 'Automation Settings', 
+            fieldname: 'enable_contact_automation',
+        },
+        callback: function(response) {
+            const is_enabled = response.message ? response.message.enable_contact_automation : false;
+            callback(is_enabled);
+        }
+    });
+}
+

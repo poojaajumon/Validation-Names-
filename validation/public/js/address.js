@@ -78,3 +78,116 @@ function check_automation_enabled(frm, callback) {
         }
     });
 }
+
+
+// suggesstions from Dictionary
+
+frappe.ui.form.on("Address", {
+    
+    onload: function(frm) {
+        if (frm.is_new()) {
+            console.log("Script Loaded")
+            frm.set_value('custom_automate', 0); // Set custom_automate to 0 for new forms
+        }
+
+        if (!frm.doc.custom_automate) {
+            checkAutomationEnabled(frm, function(is_enabled) {
+                if (is_enabled) {
+                    console.log("Automation Enabled")
+                    applyAddressCorrections(frm);
+                }
+            });
+        }
+    },
+
+    tax_category: function(frm) {
+        frappe.confirm(
+            'Do you want to create a new dictionary entry for Address Line 1?',
+            function() {
+                // Redirect to Dictionary doctype if user clicks 'Yes'
+                frappe.set_route('Form', 'Dictionary', 'new');
+            },
+            function() {
+                // User clicked 'No', do nothing
+            }
+        );
+    },
+
+    save: function(frm) {
+        if (!frm.doc.custom_automate) {
+            checkAutomationEnabled(frm, function(is_enabled) {
+                if (is_enabled) {
+                    applyAddressCorrections(frm);
+
+                    // After applying corrections, set custom_automate to 1
+                    frm.set_value('custom_automate', 1);
+
+                    // Save the form to persist changes
+                    frm.save()
+                        .then(() => {
+                            console.log("custom_automate has been enabled and saved.");
+                        })
+                        .catch((error) => {
+                            console.error("Error while saving the form:", error);
+                        });
+                }
+            });
+        }
+    },
+
+    address_line1: function(frm) {
+        if (!frm.doc.custom_automate) {
+            checkAutomationEnabled(frm, function(is_enabled) {
+                if (is_enabled) {
+                    applyAddressCorrections(frm);
+                }
+            });
+        }
+    }
+});
+
+// Function to apply the corrections from the Dictionary to supplier_name
+function applyAddressCorrections(frm) {
+    frappe.call({
+        method: "frappe.client.get_list",
+        args: {
+            doctype: "Dictionary",
+            fields: ["found_word", "actual_word"],
+        },
+        callback: function(response) {
+            if (response.message) {
+                const corrections = response.message.reduce((acc, d) => {
+                    acc[d.found_word] = d.actual_word;
+                    return acc;
+                }, {});
+
+                if (corrections) {
+                    const field = "address_line1";
+                    if (frm.doc[field]) {
+                        let updated_address = frm.doc[field];
+                        for (const [incorrect, corrected] of Object.entries(corrections)) {
+                            updated_address = updated_address.replace(incorrect, corrected);
+                        }
+                        frm.set_value(field, updated_address);
+                    }
+                }
+            }
+        },
+    });
+}
+
+// Function to check if automation is enabled globally
+function checkAutomationEnabled(frm, callback) {
+    frappe.call({
+        method: 'frappe.client.get_value',
+        args: {
+            doctype: 'Automation Settings', 
+            fieldname: 'enable_address_automation',
+        },
+        callback: function(response) {
+            const is_enabled = response.message ? response.message.enable_address_automation : false;
+            callback(is_enabled);
+        }
+    });
+}
+
