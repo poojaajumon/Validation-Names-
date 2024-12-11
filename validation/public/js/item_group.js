@@ -74,10 +74,10 @@ function check_automation_enabled(frm, callback) {
 // suggestions from Dictionary
 
 frappe.ui.form.on("Item Group", {
-    
+   
     onload: function(frm) {
         if (frm.is_new()) {
-            console.log("Script Loaded")
+            console.log("Script Loaded");
             frm.set_value('custom_automate', 0); // Set custom_automate to 0 for new forms
         }
 
@@ -90,20 +90,58 @@ frappe.ui.form.on("Item Group", {
         }
     },
 
-   
+    // Triggered when the parent_item_group field is changed
     parent_item_group: function(frm) {
         frappe.confirm(
             'Do you want to create a new dictionary entry for Item Group Name?',
             function() {
-                // Redirect to Dictionary doctype if user clicks 'Yes'
-                frappe.set_route('Form', 'Dictionary', 'new');
+                // If user clicks 'Yes', show the custom dialog box for creating dictionary entry
+                const dialog = new frappe.ui.Dialog({
+                    title: 'Edit or Add Dictionary Entry',
+                    fields: [
+                        {
+                            fieldtype: 'Data',
+                            fieldname: 'found_word',
+                            label: 'Found Word',
+                            reqd: 1,
+                        },
+                        {
+                            fieldtype: 'Data',
+                            fieldname: 'actual_word',
+                            label: 'Actual Word',
+                            reqd: 1,
+                        }
+                    ],
+                    primary_action_label: 'Save',
+                    primary_action(values) {
+                        frappe.call({
+                            method: 'frappe.client.insert',
+                            args: {
+                                doc: {
+                                    doctype: 'Dictionary',
+                                    found_word: values.found_word,
+                                    actual_word: values.actual_word,
+                                }
+                            },
+                            callback: function(response) {
+                                if (response.message) {
+                                    frappe.msgprint('Dictionary entry saved successfully!');
+                                    dialog.hide();
+                                }
+                            }
+                        });
+                    }
+                });
+                dialog.show();
             },
             function() {
-                // User clicked 'No', do nothing
+                // If user clicks 'No', do nothing
+                console.log("User declined to add a dictionary entry.");
             }
         );
     },
 
+    // When the form is saved, apply the dictionary corrections to item_group_name field
     save: function(frm) {
         if (!frm.doc.custom_automate) {
             checkAutomationEnabled(frm, function(is_enabled) {
@@ -126,6 +164,7 @@ frappe.ui.form.on("Item Group", {
         }
     },
 
+    // If item_group_name is changed manually, reapply corrections
     item_group_name: function(frm) {
         if (!frm.doc.custom_automate) {
             checkAutomationEnabled(frm, function(is_enabled) {
@@ -137,7 +176,7 @@ frappe.ui.form.on("Item Group", {
     }
 });
 
-// Function to apply the corrections from the Dictionary to customer_name
+// Function to apply the corrections from the Dictionary to item_group_name
 function applyItemGroupCorrections(frm) {
     frappe.call({
         method: "frappe.client.get_list",
@@ -181,4 +220,3 @@ function checkAutomationEnabled(frm, callback) {
         }
     });
 }
-

@@ -81,7 +81,7 @@ function check_automation_enabled(frm, callback) {
 // suggestions from Dictionary to customer_name
 
 frappe.ui.form.on("Customer", {
-    // Onload: Apply customer_name corrections from Dictionary when the form loads
+    
     onload: function(frm) {
         if (frm.is_new()) {
             frm.set_value('custom_automate', 0); // Set custom_automate to 0 for new forms
@@ -101,8 +101,7 @@ frappe.ui.form.on("Customer", {
         frappe.confirm(
             'Do you want to create a new dictionary entry for customer name?',
             function() {
-                // Redirect to Dictionary doctype if user clicks 'Yes'
-                frappe.set_route('Form', 'Dictionary', 'new');
+                openDictionaryDialog(frm);
             },
             function() {
                 // User clicked 'No', do nothing
@@ -145,6 +144,49 @@ frappe.ui.form.on("Customer", {
     }
 });
 
+// Function to open the Dictionary dialog
+function openDictionaryDialog(frm) {
+    const dialog = new frappe.ui.Dialog({
+        title: 'Add New Dictionary Entry',
+        fields: [
+            {
+                fieldname: 'found_word',
+                label: 'Found Word',
+                fieldtype: 'Data',
+                reqd: 1
+            },
+            {
+                fieldname: 'actual_word',
+                label: 'Actual Word',
+                fieldtype: 'Data',
+                reqd: 1
+            }
+        ],
+        primary_action_label: 'Save',
+        primary_action(values) {
+            // Save the dictionary entry
+            frappe.call({
+                method: 'frappe.client.insert',
+                args: {
+                    doc: {
+                        doctype: 'Dictionary',
+                        found_word: values.found_word,
+                        actual_word: values.actual_word
+                    }
+                },
+                callback: function(response) {
+                    if (response.message) {
+                        frappe.msgprint(__('Dictionary entry added successfully.'));
+                        dialog.hide();
+                    }
+                }
+            });
+        }
+    });
+
+    dialog.show();
+}
+
 // Function to apply the corrections from the Dictionary to customer_name
 function applyCustomerNameCorrections(frm) {
     frappe.call({
@@ -180,7 +222,7 @@ function checkAutomationEnabled(frm, callback) {
     frappe.call({
         method: 'frappe.client.get_value',
         args: {
-            doctype: 'Automation Settings', // Replace with the correct doctype name for your settings
+            doctype: 'Automation Settings', 
             fieldname: 'enable_customer_automation',
         },
         callback: function(response) {
@@ -189,4 +231,3 @@ function checkAutomationEnabled(frm, callback) {
         }
     });
 }
-

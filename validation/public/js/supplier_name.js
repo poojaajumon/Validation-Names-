@@ -80,7 +80,7 @@ function check_automation_enabled(frm, callback) {
 // suggestions from Dictionary to supplier_name
 
 frappe.ui.form.on("Supplier", {
-    
+
     onload: function(frm) {
         if (frm.is_new()) {
             console.log("script loaded")
@@ -96,19 +96,58 @@ frappe.ui.form.on("Supplier", {
         }
     },
 
+    // Triggered when the supplier_group field is changed
     supplier_group: function(frm) {
         frappe.confirm(
             'Do you want to create a new dictionary entry for supplier name?',
             function() {
-                // Redirect to Dictionary doctype if user clicks 'Yes'
-                frappe.set_route('Form', 'Dictionary', 'new');
+                // If user confirms, show the custom dialog box for adding a dictionary entry
+                const dialog = new frappe.ui.Dialog({
+                    title: 'Edit or Add Dictionary Entry',
+                    fields: [
+                        {
+                            fieldtype: 'Data',
+                            fieldname: 'found_word',
+                            label: 'Found Word',
+                            reqd: 1,
+                        },
+                        {
+                            fieldtype: 'Data',
+                            fieldname: 'actual_word',
+                            label: 'Actual Word',
+                            reqd: 1,
+                        }
+                    ],
+                    primary_action_label: 'Save',
+                    primary_action(values) {
+                        frappe.call({
+                            method: 'frappe.client.insert',
+                            args: {
+                                doc: {
+                                    doctype: 'Dictionary',
+                                    found_word: values.found_word,
+                                    actual_word: values.actual_word,
+                                }
+                            },
+                            callback: function(response) {
+                                if (response.message) {
+                                    frappe.msgprint('Dictionary entry saved successfully!');
+                                    dialog.hide();
+                                }
+                            }
+                        });
+                    }
+                });
+                dialog.show();
             },
             function() {
-                // User clicked 'No', do nothing
+                // If user declines, log or perform another action
+                console.log("User declined to add a dictionary entry.");
             }
         );
     },
 
+    // When the form is saved, apply the dictionary corrections to the supplier_name field
     save: function(frm) {
         if (!frm.doc.custom_automate) {
             checkAutomationEnabled(frm, function(is_enabled) {
@@ -187,4 +226,3 @@ function checkAutomationEnabled(frm, callback) {
         }
     });
 }
-

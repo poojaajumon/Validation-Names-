@@ -85,7 +85,6 @@ function check_automation_enabled(frm, callback) {
 //suggestions from Dictionary
 
 frappe.ui.form.on("Item", {
-    // Onload: Apply customer_name corrections from Dictionary when the form loads
     onload: function(frm) {
         if (frm.is_new()) {
             console.log("Script Loaded")
@@ -101,20 +100,58 @@ frappe.ui.form.on("Item", {
         }
     },
 
-   
+    // Triggered when the item_group field is changed
     item_group: function(frm) {
         frappe.confirm(
             'Do you want to create a new dictionary entry for Item code?',
             function() {
-                // Redirect to Dictionary doctype if user clicks 'Yes'
-                frappe.set_route('Form', 'Dictionary', 'new');
+                // If user confirms, show the custom dialog box for adding a new dictionary entry
+                const dialog = new frappe.ui.Dialog({
+                    title: 'Edit or Add Dictionary Entry',
+                    fields: [
+                        {
+                            fieldtype: 'Data',
+                            fieldname: 'found_word',
+                            label: 'Found Word',
+                            reqd: 1,
+                        },
+                        {
+                            fieldtype: 'Data',
+                            fieldname: 'actual_word',
+                            label: 'Actual Word',
+                            reqd: 1,
+                        }
+                    ],
+                    primary_action_label: 'Save',
+                    primary_action(values) {
+                        frappe.call({
+                            method: 'frappe.client.insert',
+                            args: {
+                                doc: {
+                                    doctype: 'Dictionary',
+                                    found_word: values.found_word,
+                                    actual_word: values.actual_word,
+                                }
+                            },
+                            callback: function(response) {
+                                if (response.message) {
+                                    frappe.msgprint('Dictionary entry saved successfully!');
+                                    dialog.hide();
+                                }
+                            }
+                        });
+                    }
+                });
+                dialog.show();
             },
             function() {
-                // User clicked 'No', do nothing
+                // If user declines, log or perform another action
+                console.log("User declined to add a dictionary entry.");
             }
         );
     },
 
+    // When the form is saved, apply the dictionary corrections to item_code
     save: function(frm) {
         if (!frm.doc.custom_automate) {
             checkAutomationEnabled(frm, function(is_enabled) {
@@ -137,7 +174,7 @@ frappe.ui.form.on("Item", {
         }
     },
 
-    // If customer_name is changed manually, reapply corrections
+    // If item_code is changed manually, reapply corrections
     item_code: function(frm) {
         if (!frm.doc.custom_automate) {
             checkAutomationEnabled(frm, function(is_enabled) {
@@ -149,7 +186,7 @@ frappe.ui.form.on("Item", {
     }
 });
 
-// Function to apply the corrections from the Dictionary to customer_name
+// Function to apply the corrections from the Dictionary to item_code
 function applyItemCodeCorrections(frm) {
     frappe.call({
         method: "frappe.client.get_list",
@@ -184,7 +221,7 @@ function checkAutomationEnabled(frm, callback) {
     frappe.call({
         method: 'frappe.client.get_value',
         args: {
-            doctype: 'Automation Settings', // Replace with the correct doctype name for your settings
+            doctype: 'Automation Settings', 
             fieldname: 'enable_item_automation',
         },
         callback: function(response) {
@@ -193,4 +230,3 @@ function checkAutomationEnabled(frm, callback) {
         }
     });
 }
-

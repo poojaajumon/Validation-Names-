@@ -54,16 +54,19 @@ frappe.ui.form.on('Address', {
 function format_name(name) {
     if (!name) return '';
 
-    // Remove all special characters except spaces
-    let formattedName = name.replace(/[^a-zA-Z\s]/g, ''); // Keep only letters and spaces
-    formattedName = formattedName.trim().toLowerCase().replace(/\b(\w)/g, function(match) {
-        return match.toUpperCase();
-    });
-    formattedName = formattedName.replace(/\s+/g, ' ');
-    formattedName = formattedName.replace(/\(/g, ' (');
+    // Remove all special characters except spaces, letters, numbers, hyphens, and slashes
+    let formattedName = name.replace(/[^a-zA-Z0-9\s\-\/]/g, ''); 
+    formattedName = formattedName.trim()
+        .toLowerCase()
+        .replace(/\b(\w)/g, function(match) {
+            return match.toUpperCase(); // Capitalize the first letter of each word
+        });
+    formattedName = formattedName.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
+    formattedName = formattedName.replace(/\(/g, ' ('); // Ensure space before parentheses if needed
 
     return formattedName;
 }
+
 
 function check_automation_enabled(frm, callback) {
     frappe.call({
@@ -83,17 +86,16 @@ function check_automation_enabled(frm, callback) {
 // suggesstions from Dictionary
 
 frappe.ui.form.on("Address", {
-    
     onload: function(frm) {
         if (frm.is_new()) {
-            console.log("Script Loaded")
+            console.log("Script Loaded");
             frm.set_value('custom_automate', 0); // Set custom_automate to 0 for new forms
         }
 
         if (!frm.doc.custom_automate) {
             checkAutomationEnabled(frm, function(is_enabled) {
                 if (is_enabled) {
-                    console.log("Automation Enabled")
+                    console.log("Automation Enabled");
                     applyAddressCorrections(frm);
                 }
             });
@@ -104,8 +106,8 @@ frappe.ui.form.on("Address", {
         frappe.confirm(
             'Do you want to create a new dictionary entry for Address Line 1?',
             function() {
-                // Redirect to Dictionary doctype if user clicks 'Yes'
-                frappe.set_route('Form', 'Dictionary', 'new');
+                // Open a dialog instead of redirecting
+                openDictionaryDialog(frm);
             },
             function() {
                 // User clicked 'No', do nothing
@@ -145,6 +147,49 @@ frappe.ui.form.on("Address", {
         }
     }
 });
+
+// Function to open the Dictionary dialog
+function openDictionaryDialog(frm) {
+    const dialog = new frappe.ui.Dialog({
+        title: 'Add New Dictionary Entry',
+        fields: [
+            {
+                fieldname: 'found_word',
+                label: 'Found Word',
+                fieldtype: 'Data',
+                reqd: 1
+            },
+            {
+                fieldname: 'actual_word',
+                label: 'Actual Word',
+                fieldtype: 'Data',
+                reqd: 1
+            }
+        ],
+        primary_action_label: 'Save',
+        primary_action(values) {
+            // Save the dictionary entry
+            frappe.call({
+                method: 'frappe.client.insert',
+                args: {
+                    doc: {
+                        doctype: 'Dictionary',
+                        found_word: values.found_word,
+                        actual_word: values.actual_word
+                    }
+                },
+                callback: function(response) {
+                    if (response.message) {
+                        frappe.msgprint(__('Dictionary entry added successfully.'));
+                        dialog.hide();
+                    }
+                }
+            });
+        }
+    });
+
+    dialog.show();
+}
 
 // Function to apply the corrections from the Dictionary to supplier_name
 function applyAddressCorrections(frm) {
@@ -190,4 +235,5 @@ function checkAutomationEnabled(frm, callback) {
         }
     });
 }
+
 

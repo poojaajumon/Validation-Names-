@@ -108,10 +108,9 @@ function check_automation_enabled(frm, callback) {
 // suggestions from Dictionary
 
 frappe.ui.form.on("Contact", {
-    
     onload: function(frm) {
         if (frm.is_new()) {
-            console.log("Script Loaded")
+            console.log("Script Loaded");
             frm.set_value('custom_automate', 0); // Set custom_automate to 0 for new forms
         }
 
@@ -128,8 +127,8 @@ frappe.ui.form.on("Contact", {
         frappe.confirm(
             'Do you want to create a new dictionary entry for name?',
             function() {
-                // Redirect to Dictionary doctype if user clicks 'Yes'
-                frappe.set_route('Form', 'Dictionary', 'new');
+                // Open a dialog instead of redirecting
+                openDictionaryDialog(frm);
             },
             function() {
                 // User clicked 'No', do nothing
@@ -159,7 +158,6 @@ frappe.ui.form.on("Contact", {
         }
     },
 
-    
     first_name: function(frm) {
         if (!frm.doc.custom_automate) {
             checkAutomationEnabled(frm, function(is_enabled) {
@@ -171,7 +169,50 @@ frappe.ui.form.on("Contact", {
     }
 });
 
-// Function to apply the corrections from the Dictionary to supplier_name
+// Function to open the Dictionary dialog
+function openDictionaryDialog(frm) {
+    const dialog = new frappe.ui.Dialog({
+        title: 'Add New Dictionary Entry',
+        fields: [
+            {
+                fieldname: 'found_word',
+                label: 'Found Word',
+                fieldtype: 'Data',
+                reqd: 1
+            },
+            {
+                fieldname: 'actual_word',
+                label: 'Actual Word',
+                fieldtype: 'Data',
+                reqd: 1
+            }
+        ],
+        primary_action_label: 'Save',
+        primary_action(values) {
+            // Save the dictionary entry
+            frappe.call({
+                method: 'frappe.client.insert',
+                args: {
+                    doc: {
+                        doctype: 'Dictionary',
+                        found_word: values.found_word,
+                        actual_word: values.actual_word
+                    }
+                },
+                callback: function(response) {
+                    if (response.message) {
+                        frappe.msgprint(__('Dictionary entry added successfully.'));
+                        dialog.hide();
+                    }
+                }
+            });
+        }
+    });
+
+    dialog.show();
+}
+
+// Function to apply corrections from the Dictionary to the first_name field
 function applyContactNameCorrections(frm) {
     frappe.call({
         method: "frappe.client.get_list",
@@ -215,4 +256,3 @@ function checkAutomationEnabled(frm, callback) {
         }
     });
 }
-
