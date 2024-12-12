@@ -95,10 +95,10 @@ function check_automation_enabled(frm, callback) {
         method: 'frappe.client.get_value',
         args: {
             doctype: 'Automation Settings',
-            fieldname: 'enable_contact_automation'
+            fieldname: 'contact'
         },
         callback: function(response) {
-            const is_enabled = response.message ? response.message.enable_contact_automation : false;
+            const is_enabled = response.message ? response.message.contact : false;
             callback(is_enabled);
         }
     });
@@ -248,11 +248,31 @@ function checkAutomationEnabled(frm, callback) {
         method: 'frappe.client.get_value',
         args: {
             doctype: 'Automation Settings', 
-            fieldname: 'enable_contact_automation',
+            fieldname: 'contact',
         },
         callback: function(response) {
-            const is_enabled = response.message ? response.message.enable_contact_automation : false;
+            const is_enabled = response.message ? response.message.contact : false;
             callback(is_enabled);
         }
     });
 }
+
+
+// add Dictionary button
+
+frappe.ui.form.on('Contact', {
+    refresh: function (frm) {
+     
+        // Add "Dictionary" under the "View" button
+        frm.add_custom_button(__('Dictionary'), function () {
+            // Navigate to the Dictionary List View
+            frappe.set_route('List', 'Dictionary');
+        }, __('View')); // Nest under "View"
+
+        // Button to create a new Dictionary
+        frm.add_custom_button(__('Create Dictionary'), function () {
+            // Open a new Dictionary document form
+            frappe.new_doc('Dictionary');
+        });
+    }
+});

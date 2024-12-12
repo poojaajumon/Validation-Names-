@@ -1,76 +1,82 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2024-12-04 10:32:29.773219",
+ "creation": "2024-12-12 11:25:16.552681",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "automation_control_section",
-  "enable_customer_automation",
-  "enable_address_automation",
-  "enable_supplier_automation",
-  "enable_employee_automation",
-  "column_break_coti",
-  "enable_contact_automation",
-  "enable_item_automation",
-  "enable_item_group_automation"
+  "enable_automation_for_section",
+  "customer",
+  "supplier",
+  "employee",
+  "column_break_jhni",
+  "contact",
+  "address",
+  "column_break_ziro",
+  "item",
+  "item_group"
  ],
  "fields": [
   {
-   "fieldname": "automation_control_section",
+   "fieldname": "enable_automation_for_section",
    "fieldtype": "Section Break",
-   "label": "Enable Automation For"
+   "label": "Enable Automation for:"
   },
   {
    "default": "0",
-   "fieldname": "enable_customer_automation",
+   "fieldname": "customer",
    "fieldtype": "Check",
-   "label": "Customer "
+   "label": "Customer"
   },
   {
    "default": "0",
-   "fieldname": "enable_address_automation",
+   "fieldname": "supplier",
    "fieldtype": "Check",
-   "label": "Address "
+   "label": "Supplier"
   },
   {
    "default": "0",
-   "fieldname": "enable_supplier_automation",
+   "fieldname": "employee",
    "fieldtype": "Check",
-   "label": "Supplier "
+   "label": "Employee"
+  },
+  {
+   "fieldname": "column_break_jhni",
+   "fieldtype": "Column Break"
   },
   {
    "default": "0",
-   "fieldname": "enable_employee_automation",
+   "fieldname": "contact",
    "fieldtype": "Check",
-   "label": "Employee "
+   "label": "Contact"
   },
   {
    "default": "0",
-   "fieldname": "enable_contact_automation",
+   "fieldname": "address",
    "fieldtype": "Check",
-   "label": "Contact "
+   "label": "Address"
+  },
+  {
+   "fieldname": "column_break_ziro",
+   "fieldtype": "Column Break"
   },
   {
    "default": "0",
-   "fieldname": "enable_item_automation",
+   "fieldname": "item",
    "fieldtype": "Check",
    "label": "Item"
   },
   {
    "default": "0",
-   "fieldname": "enable_item_group_automation",
+   "fieldname": "item_group",
    "fieldtype": "Check",
-   "label": "Item Group "
-  },
-  {
-   "fieldname": "column_break_coti",
-   "fieldtype": "Column Break"
+   "label": "Item Group"
   }
  ],
  "index_web_pages_for_search": 1,
+ "issingle": 1,
  "links": [],
- "modified": "2024-12-05 11:51:48.871347",
+ "modified": "2024-12-12 11:34:10.724716",
  "modified_by": "Administrator",
  "module": "Validation",
  "name": "Automation Settings",
@@ -80,10 +86,8 @@
    "create": 1,
    "delete": 1,
    "email": 1,
-   "export": 1,
    "print": 1,
    "read": 1,
-   "report": 1,
    "role": "System Manager",
    "share": 1,
    "write": 1

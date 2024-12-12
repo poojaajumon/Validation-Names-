@@ -9,7 +9,6 @@ def before_save(doc, method):
             "Dictionary", fields=["found_word", "actual_word"]
         )}
 
-       
         if corrections:
             if doc.get("item_group_name"):
                 text = doc.get("item_group_name")
