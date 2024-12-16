@@ -51,7 +51,10 @@ doctype_js = {
     "Batch" : "public/js/batch_name.js",
     "Employee" : "public/js/employee_name.js",
     "Item" : "public/js/item_name.js",
-    "Item Group" : "public/js/item_group.js"
+    "Item Group" : "public/js/item_group.js",
+    "Terms and Conditions" : "public/js/terms_conditions.js",
+    "Project" : "public/js/project.js",
+    "Task" : "public/js/task.js"
     
 }
 
@@ -171,6 +174,15 @@ doc_events = {
     },
     "Employee": {
         "before_save": "validation.events.employee.before_save"
+    },
+    "Terms and Conditions": {
+        "before_save": "validation.events.terms_conditions.before_save"
+    },
+    "Project" : {
+        "before_save" : "validation.events.project.before_save"
+    },
+    "Task" : {
+        "before_save" : "validation.events.task.before_save"
     }
 }
 
