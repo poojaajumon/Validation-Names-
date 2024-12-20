@@ -54,8 +54,12 @@ frappe.ui.form.on('Address', {
 function format_name(name) {
     if (!name) return '';
 
+    // Handle consecutive spaces separately to preserve user-intended spaces
+    const lastChar = name.slice(-1); // Get the last character
+    const isSpaceAdded = lastChar === ' '; // Check if the last character is a space
+
     // Remove all special characters except spaces, letters, numbers, hyphens, and slashes
-    let formattedName = name.replace(/[^a-zA-Z0-9\s\-\/]/g, ''); 
+    let formattedName = name.replace(/[^a-zA-Z0-9\s\-\/]/g, '');
     formattedName = formattedName.trim()
         .toLowerCase()
         .replace(/\b(\w)/g, function(match) {
@@ -63,6 +67,11 @@ function format_name(name) {
         });
     formattedName = formattedName.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
     formattedName = formattedName.replace(/\(/g, ' ('); // Ensure space before parentheses if needed
+
+    // Retain the trailing space if the user just typed one
+    if (isSpaceAdded) {
+        formattedName += ' ';
+    }
 
     return formattedName;
 }

@@ -44,8 +44,19 @@ function format_name(name) {
 
     console.log("Formatting name:", name);
 
+    // List of salutations to remove
+    const salutations = ["mr", "mrs", "miss", "ms", "dr", "prof", "sir", "madam", "rev"];
+    const salutationRegex = new RegExp(`\\b(${salutations.join('|')})\\.?\\s`, 'i');
+
+    // Remove salutations
+    let formattedName = name.replace(salutationRegex, '');
+
+    // Check if the last character is a space to preserve it
+    const lastChar = name.slice(-1);
+    const isSpaceAdded = lastChar === ' ';
+
     // Remove all characters except letters, spaces, and hyphens
-    let formattedName = name.replace(/[^a-zA-Z\s\-]/g, ''); // Keep letters, spaces, and hyphens
+    formattedName = formattedName.replace(/[^a-zA-Z\s\-]/g, ''); // Keep letters, spaces, and hyphens
 
     // Trim, lowercase, capitalize the first letter of each word, and remove extra spaces
     formattedName = formattedName.trim().toLowerCase().replace(/\b(\w)/g, function(match) {
@@ -54,6 +65,11 @@ function format_name(name) {
 
     // Remove any extra spaces between words
     formattedName = formattedName.replace(/\s+/g, ' ');
+
+    // Retain the trailing space if it exists
+    if (isSpaceAdded) {
+        formattedName += ' ';
+    }
 
     console.log("Formatted name:", formattedName);
 

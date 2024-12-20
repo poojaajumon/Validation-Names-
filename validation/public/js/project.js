@@ -42,20 +42,24 @@ frappe.ui.form.on('Project', {
 function format_name(name) {
     if (!name) return '';
 
-    console.log("Formatting name:", name);
+    // Check if the last character is a space to preserve it during formatting
+    const lastChar = name.slice(-1); 
+    const isSpaceAdded = lastChar === ' ';
 
-    // Remove all characters except letters, spaces, hyphens, and slashes
-    let formattedName = name.replace(/[^a-zA-Z\s\-\//]/g, ''); // Keep letters, spaces, hyphens, and slashes
+    // Remove all special characters except letters and spaces
+    let formattedName = name.replace(/[^a-zA-Z\s]/g, ''); // Keep only letters and spaces
 
-    // Trim, lowercase, capitalize the first letter of each word, and remove extra spaces
+    // Trim, lowercase, capitalize first letter of each word, and remove extra spaces
     formattedName = formattedName.trim().toLowerCase().replace(/\b(\w)/g, function(match) {
         return match.toUpperCase();
     });
+    formattedName = formattedName.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
+    formattedName = formattedName.replace(/\(/g, ' ('); // Ensure space before parentheses
 
-    // Remove any extra spaces between words
-    formattedName = formattedName.replace(/\s+/g, ' ');
-
-    console.log("Formatted name:", formattedName);
+    // Retain the trailing space if the user just typed one
+    if (isSpaceAdded) {
+        formattedName += ' ';
+    }
 
     return formattedName;
 }

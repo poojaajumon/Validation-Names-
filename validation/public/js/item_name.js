@@ -52,14 +52,24 @@ function handleFieldAutomation(frm, field_name) {
 function format_name(name) {
     if (!name) return '';
 
-    console.log("Formatting name:", name);
+    // Handle consecutive spaces separately to preserve user-intended spaces
+    const lastChar = name.slice(-1); // Get the last character
+    const isSpaceAdded = lastChar === ' '; // Check if the last character is a space
 
-    let formattedName = name.replace(/[\.-\/,0-9]/g, '');
-    formattedName = formattedName.trim().toLowerCase().replace(/\b(\w)/g, function(match) {
-        return match.toUpperCase();
-    });
-    formattedName = formattedName.replace(/\s+/g, ' ');
-    formattedName = formattedName.replace(/\(/g, ' (');
+    // Remove all special characters except spaces, letters, numbers, hyphens, and slashes
+    let formattedName = name.replace(/[^a-zA-Z0-9\s\-\/]/g, '');
+    formattedName = formattedName.trim()
+        .toLowerCase()
+        .replace(/\b(\w)/g, function(match) {
+            return match.toUpperCase(); // Capitalize the first letter of each word
+        });
+    formattedName = formattedName.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
+    formattedName = formattedName.replace(/\(/g, ' ('); // Ensure space before parentheses if needed
+
+    // Retain the trailing space if the user just typed one
+    if (isSpaceAdded) {
+        formattedName += ' ';
+    }
 
     return formattedName;
 }

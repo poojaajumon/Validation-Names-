@@ -72,18 +72,41 @@ frappe.ui.form.on('Employee', {
 function format_name(name) {
     if (!name) return '';
 
-    // Remove all special characters except spaces
-    let formattedName = name.replace(/[^a-zA-Z\s]/g, ''); // Keep only letters and spaces
+    console.log("Formatting name:", name);
 
-    // Trim, lowercase, capitalize first letter of each word, and remove extra spaces
+    // List of salutations to remove
+    const salutations = ["mr", "mrs", "miss", "ms", "dr", "prof", "sir", "madam", "rev"];
+    const salutationRegex = new RegExp(`\\b(${salutations.join('|')})\\.?\\s`, 'i');
+
+    // Remove salutations
+    let formattedName = name.replace(salutationRegex, '');
+
+    // Check if the last character is a space to preserve it
+    const lastChar = name.slice(-1);
+    const isSpaceAdded = lastChar === ' ';
+
+    // Remove all characters except letters, spaces, and hyphens
+    formattedName = formattedName.replace(/[^a-zA-Z\s\-]/g, ''); // Keep letters, spaces, and hyphens
+
+    // Trim, lowercase, capitalize the first letter of each word, and remove extra spaces
     formattedName = formattedName.trim().toLowerCase().replace(/\b(\w)/g, function(match) {
         return match.toUpperCase();
     });
-    formattedName = formattedName.replace(/\s+/g, ' '); // Remove extra spaces
-    formattedName = formattedName.replace(/\(/g, ' ('); // Optional specific formatting
+
+    // Remove any extra spaces between words
+    formattedName = formattedName.replace(/\s+/g, ' ');
+
+    // Retain the trailing space if it exists
+    if (isSpaceAdded) {
+        formattedName += ' ';
+    }
+
+    console.log("Formatted name:", formattedName);
 
     return formattedName;
 }
+
+
 
 
 function update_employee_name(frm) {
