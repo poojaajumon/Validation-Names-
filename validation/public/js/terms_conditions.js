@@ -1,235 +1,109 @@
 frappe.ui.form.on('Terms and Conditions', {
-    onload: function(frm) {
-        if (frm.is_new()) {
-            console.log("Form is new. Initializing custom_automate.");
-            frm.set_value('custom_automate', 0); // Disable custom_automate for new forms
-        }
-    },
-
-    title: function(frm) {
-        if (!frm.doc.custom_automate) {
-            console.log("Title trigger activated and custom_automate is disabled");
-            check_automation_enabled(frm, function(is_enabled) {
-                console.log("Automation check result:", is_enabled);
-                if (is_enabled) {
-                    const formatted_name = format_name(frm.doc.title);
-                    console.log("Formatted Name:", formatted_name);
-                    frm.set_value('title', formatted_name);
+    before_save: function (frm) {
+        check_automation_enabled(frm, function (is_enabled) {
+            if (is_enabled === 1) {  // Proceed only if automation is enabled
+                console.log("Automation enabled. Proceeding with before_save logic.");
+                if (frm.is_new() && !frm.doc.custom_automate) {
+                    console.log("Before Save: Initializing custom_automate to 0 for new records.");
+                    frm.set_value('custom_automate', 0); // Initialize custom_automate
                 }
-            });
-        } else {
-            console.log("custom_automate is enabled. Skipping Title trigger.");
-        }
+
+                if (!frm.doc.custom_automate) {
+                    if (frm.doc.title) frm.set_value('title', format_name(frm.doc.title));
+                    if (frm.doc.terms) frm.set_value('terms', format_description(frm.doc.terms));
+                } else {
+                    console.log("custom_automate is enabled. Skipping field formatting.");
+                }
+            } else {
+                console.log("Automation not enabled. Skipping before_save logic.");
+            }
+        });
     },
 
-    after_save: function(frm) {
-        if (!frm.doc.custom_automate) {
-            console.log("After Save: Enabling custom_automate");
-            frm.set_value('custom_automate', 1); // Enable custom_automate after the first save
-
-            // Save the form again to persist the change
-            frm.save()
-                .then(() => {
-                    console.log("custom_automate has been enabled and saved.");
-                })
-                .catch((error) => {
-                    console.error("Error while saving the form after enabling custom_automate:", error);
-                });
-        }
+    after_save: function (frm) {
+        check_automation_enabled(frm, function (is_enabled) {
+            if (is_enabled === 1) {  // Proceed only if automation is enabled
+                console.log("Automation enabled. Proceeding with after_save logic.");
+                if (frm.doc.custom_automate === 0) {
+                    console.log("After Save: Enabling custom_automate.");
+                    frm.set_value('custom_automate', 1);
+                    frm.save();
+                }
+            } else {
+                console.log("Automation not enabled. Skipping after_save logic.");
+            }
+        });
     }
 });
 
-function format_name(name) {
-    if (!name) return '';
 
-    // Check if the last character is a space to preserve it during formatting
-    const lastChar = name.slice(-1); 
-    const isSpaceAdded = lastChar === ' ';
 
-    // Remove all special characters except letters and spaces
-    let formattedName = name.replace(/[^a-zA-Z\s]/g, ''); // Keep only letters and spaces
-
-    // Trim, lowercase, capitalize first letter of each word, and remove extra spaces
-    formattedName = formattedName.trim().toLowerCase().replace(/\b(\w)/g, function(match) {
-        return match.toUpperCase();
-    });
-    formattedName = formattedName.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
-    formattedName = formattedName.replace(/\(/g, ' ('); // Ensure space before parentheses
-
-    // Retain the trailing space if the user just typed one
-    if (isSpaceAdded) {
-        formattedName += ' ';
-    }
-
-    return formattedName;
-}
 function check_automation_enabled(frm, callback) {
-    console.log("Checking automation enabled status");
     frappe.call({
         method: 'frappe.client.get_value',
         args: {
             doctype: 'Automation Settings',
-            fieldname: 'terms_and_conditions'
-        },
-        callback: function(response) {
-            console.log("Automation Settings response:", response);
-            const is_enabled = response.message ? response.message.terms_and_conditions : false;
-            callback(is_enabled);
-        }
-    });
-}
-
-
-frappe.ui.form.on("Terms and Conditions", {
-
-    onload: function(frm) {
-        if (frm.is_new()) {
-            console.log("script loaded")
-            frm.set_value('custom_automate', 0); // Set custom_automate to 0 for new forms
-        }
-
-        if (!frm.doc.custom_automate) {
-            checkAutomationEnabled(frm, function(is_enabled) {
-                if (is_enabled) {
-                    applyTitleCorrections(frm);
-                }
-            });
-        }
-    },
-
-    // Triggered when the termsfield is changed
-    terms: function(frm) {
-        // Check if the dialog has been shown already
-        if (!frm.dialog_shown) {
-            frappe.confirm(
-                'Do you want to create a new dictionary entry for title?',
-                function() {
-                    // If user confirms, show the custom dialog box for adding a dictionary entry
-                    const dialog = new frappe.ui.Dialog({
-                        title: 'Edit or Add Dictionary Entry',
-                        fields: [
-                            {
-                                fieldtype: 'Data',
-                                fieldname: 'found_word',
-                                label: 'Found Word',
-                                reqd: 1,
-                            },
-                            {
-                                fieldtype: 'Data',
-                                fieldname: 'actual_word',
-                                label: 'Actual Word',
-                                reqd: 1,
-                            }
-                        ],
-                        primary_action_label: 'Save',
-                        primary_action(values) {
-                            frappe.call({
-                                method: 'frappe.client.insert',
-                                args: {
-                                    doc: {
-                                        doctype: 'Dictionary',
-                                        found_word: values.found_word,
-                                        actual_word: values.actual_word,
-                                    }
-                                },
-                                callback: function(response) {
-                                    if (response.message) {
-                                        frappe.msgprint('Dictionary entry saved successfully!');
-                                        dialog.hide();
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    dialog.show();
-
-                    // Set flag to ensure the dialog is not shown again
-                    frm.dialog_shown = true;
-                },
-                function() {
-                    // If user declines, log or perform another action
-                    console.log("User declined to add a dictionary entry.");
-                }
-            );
-        }
-    },
-
-    // When the form is saved, apply the dictionary corrections to the title field
-    save: function(frm) {
-        if (!frm.doc.custom_automate) {
-            checkAutomationEnabled(frm, function(is_enabled) {
-                if (is_enabled) {
-                    applyTitleCorrections(frm);
-
-                    // After applying corrections, set custom_automate to 1
-                    frm.set_value('custom_automate', 1);
-
-                    // Save the form to persist changes
-                    frm.save()
-                        .then(() => {
-                            console.log("custom_automate has been enabled and saved.");
-                        })
-                        .catch((error) => {
-                            console.error("Error while saving the form:", error);
-                        });
-                }
-            });
-        }
-    },
-
-    title: function(frm) {
-        if (!frm.doc.custom_automate) {
-            checkAutomationEnabled(frm, function(is_enabled) {
-                if (is_enabled) {
-                    applyTitleCorrections(frm);
-                }
-            });
-        }
-    }
-});
-
-function applyTitleCorrections(frm) {
-    frappe.call({
-        method: "frappe.client.get_list",
-        args: {
-            doctype: "Dictionary",
-            fields: ["found_word", "actual_word"],
-        },
-        callback: function(response) {
-            if (response.message) {
-                const corrections = response.message.reduce((acc, d) => {
-                    acc[d.found_word] = d.actual_word;
-                    return acc;
-                }, {});
-
-                if (corrections) {
-                    const field = "title";
-                    if (frm.doc[field]) {
-                        let updated_name = frm.doc[field];
-                        for (const [incorrect, corrected] of Object.entries(corrections)) {
-                            updated_name = updated_name.replace(incorrect, corrected);
-                        }
-                        frm.set_value(field, updated_name);
-                    }
-                }
-            }
-        },
-    });
-}
-
-// Function to check if automation is enabled globally
-function checkAutomationEnabled(frm, callback) {
-    frappe.call({
-        method: 'frappe.client.get_value',
-        args: {
-            doctype: 'Automation Settings', 
             fieldname: 'terms_and_conditions',
         },
         callback: function(response) {
-            const is_enabled = response.message ? response.message.terms_and_conditions: false;
+            console.log("Automation Settings Response:", response);
+            const is_enabled = response.message && response.message.terms_and_conditions ? parseInt(response.message.terms_and_conditions, 10) : 0; // Ensure numeric value
             callback(is_enabled);
-        }
+        },
     });
+}
+function format_name(name) {
+    if (!name) return '';
+
+    // Remove all special characters except letters, digits, hyphen, underscore, comma, brackets, and slashes
+    let formattedName = name.replace(/[^a-zA-Z0-9\s\-,_\(\)\[\]\/\\]/g, ''); // Allow letters, digits, space, hyphen, underscore, comma, brackets, and slashes
+
+    // Trim leading/trailing spaces and normalize multiple spaces between words
+    formattedName = formattedName.trim().replace(/\s+/g, ' ');
+
+    // Handle spaces before and after punctuation and brackets
+    formattedName = formattedName.replace(/\s*(?=\()|\s*(?=\[)/g, '');   // Remove space before opening brackets
+    formattedName = formattedName.replace(/\s*(?=\))|\s*(?=\])/g, '');   // Remove space after closing brackets
+    formattedName = formattedName.replace(/\s*(?=\,)/g, '');             // Remove space before commas
+
+    // Capitalize the first letter of each word and keep the other letters in lowercase
+    formattedName = formattedName.toLowerCase().replace(/\b(\w)/g, function(match) {
+        return match.toUpperCase(); // Capitalize first letter of each word
+    });
+
+    // Return the formatted name
+    return formattedName;
+}
+
+
+// Function to format notes
+function format_description(description) {
+    if (!description) {
+        console.log("No description provided for formatting.");
+        return '';
+    }
+
+    // Log the original description for debugging
+    console.log("Original description:", description);
+
+    // Strip HTML content and trim spaces
+    let strippedDescription = description.replace(/<\/?[^>]+(>|$)/g, "").trim(); // Remove HTML tags
+
+    if (!strippedDescription) {
+        console.log("No text content found after stripping HTML.");
+        return description; // Return the original description if it's empty after stripping
+    }
+
+    // Convert to sentence case
+    let formattedDescription = strippedDescription.toLowerCase();
+    formattedDescription =
+        formattedDescription.charAt(0).toUpperCase() + formattedDescription.slice(1); // Capitalize the first letter
+
+    // Log the formatted description
+    console.log("Formatted description:", formattedDescription);
+
+    // Return the formatted description, re-wrapped in the same HTML format as the original
+    return `<div class="ql-editor read-mode"><p>${formattedDescription}</p></div>`;
 }
 
 
@@ -242,13 +116,52 @@ frappe.ui.form.on('Terms and Conditions', {
             
             frappe.set_route('List', 'Dictionary');
         }, __('View'));
-
-        // Add a button to create a new Dictionary in the Create section
-        frm.add_custom_button(__('Dictionary'), function () {
-            // Open a new Dictionary document form
-            frappe.new_doc('Dictionary');
-        }, __('Create'));
     }
 });
 
 
+// for selecting only one check box at a time
+
+frappe.ui.form.on('Terms and Conditions', {
+    refresh: function(frm) {
+        // When the form is refreshed, ensure no checkbox is selected if more than one checkbox is selected
+        frm.fields_dict['selling'].input.onchange = function() {
+            validateSelection(frm);
+        };
+        frm.fields_dict['buying'].input.onchange = function() {
+            validateSelection(frm);
+        };
+        frm.fields_dict['hr'].input.onchange = function() {
+            validateSelection(frm);
+        };
+    }
+});
+
+// Function to validate only one checkbox is selected
+function validateSelection(frm) {
+    let selling = frm.doc.selling;
+    let buying = frm.doc.buying;
+    let hr = frm.doc.hr;
+
+    // Log current checkbox states
+    console.log("Checkbox states - Selling:", selling, "Buying:", buying, "HR:", hr);
+
+    // Check if more than one checkbox is selected
+    if (selling + buying + hr > 1) {
+        console.log("More than one checkbox selected. Resetting selections.");
+
+        // Show a popup to inform the user
+        frappe.msgprint({
+            title: __('Invalid Selection'),
+            message: __('Only one module can be selected at a time.'),
+            indicator: 'red'
+        });
+
+        // Reset all checkboxes
+        if (selling) frm.set_value('selling', 0);
+        if (buying) frm.set_value('buying', 0);
+        if (hr) frm.set_value('hr', 0);
+    } else {
+        console.log("Only one checkbox selected, keeping selection.");
+    }
+}

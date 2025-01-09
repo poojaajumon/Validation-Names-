@@ -1,5 +1,4 @@
-
-frappe.ui.form.on('Task', {
+frappe.ui.form.on('Email Template', {
     before_save: function (frm) {
         check_automation_enabled(frm, function (is_enabled) {
             if (is_enabled === 1) {  // Proceed only if automation is enabled
@@ -11,7 +10,7 @@ frappe.ui.form.on('Task', {
 
                 if (!frm.doc.custom_automate) {
                     if (frm.doc.subject) frm.set_value('subject', format_name(frm.doc.subject));
-                    if (frm.doc.description) frm.set_value('description', format_description(frm.doc.description));
+                    if (frm.doc.response) frm.set_value('response', format_description(frm.doc.response));
                 } else {
                     console.log("custom_automate is enabled. Skipping field formatting.");
                 }
@@ -152,18 +151,16 @@ frappe.ui.form.on('Task', {
     },
 });
 
-
-
 function check_automation_enabled(frm, callback) {
     frappe.call({
         method: 'frappe.client.get_value',
         args: {
             doctype: 'Automation Settings',
-            fieldname: 'task',
+            fieldname: 'email_template',
         },
         callback: function(response) {
             console.log("Automation Settings Response:", response);
-            const is_enabled = response.message && response.message.task ? parseInt(response.message.task, 10) : 0; // Ensure numeric value
+            const is_enabled = response.message && response.message.email_template ? parseInt(response.message.email_template, 10) : 0; // Ensure numeric value
             callback(is_enabled);
         },
     });
@@ -225,7 +222,7 @@ function format_description(description) {
 
 // add Dictionary button
 
-frappe.ui.form.on('Task', {
+frappe.ui.form.on('Email Template', {
     refresh: function (frm) {
      
         // Add "Dictionary" under the "View" button
@@ -235,5 +232,4 @@ frappe.ui.form.on('Task', {
         }, __('View')); // Nest under "View"
     }
 });
-
 

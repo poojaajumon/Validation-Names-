@@ -4,7 +4,8 @@ import re
 @frappe.whitelist()
 def before_save(doc, method):
     try:
-        automation_settings = frappe.get_value("Automation Settings", None, "item_group")
+      
+        automation_settings = frappe.get_value("Automation Settings", None, "email_template")
         if not automation_settings or int(automation_settings) != 1:
             return  
 
@@ -12,7 +13,7 @@ def before_save(doc, method):
             return  # Exit if custom automation is not disabled
 
         # Log that the function has started
-        frappe.log_error("before_save function started", "before_save Log")
+        frappe.log_error("before_save function started ", "before_save Log")
 
         # Fetch dictionary entries for corrections
         corrections = {}
@@ -22,7 +23,7 @@ def before_save(doc, method):
             corrections[entry["found_word"]] = entry["actual_word"]
 
         # Fields to check and correct
-        fields_to_check = ["item_group_name"]
+        fields_to_check = ["subject"]
 
         for field in fields_to_check:
             field_value = doc.get(field)

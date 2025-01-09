@@ -54,7 +54,9 @@ doctype_js = {
     "Item Group" : "public/js/item_group.js",
     "Terms and Conditions" : "public/js/terms_conditions.js",
     "Project" : "public/js/project.js",
-    "Task" : "public/js/task.js"
+    "Task" : "public/js/task.js",
+    "Lead" : "public/js/lead.js",
+    "Email Template" : "public/js/email_template.js"
     
 }
 
@@ -183,7 +185,14 @@ doc_events = {
     },
     "Task" : {
         "before_save" : "validation.events.task.before_save"
+    },
+    "Lead" : {
+        "before_save" : "validation.events.lead.before_save"
+    },
+    "Email Template" : {
+        "before_save" : "validation.events.email_template.before_save"
     }
+    
 }
 
 

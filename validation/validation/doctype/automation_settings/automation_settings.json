@@ -16,9 +16,12 @@
   "item",
   "item_group",
   "column_break_tueo",
-  "terms_and_conditions",
   "project",
-  "task"
+  "task",
+  "lead",
+  "column_break_pkip",
+  "terms_and_conditions",
+  "email_template"
  ],
  "fields": [
   {
@@ -97,12 +100,28 @@
    "fieldname": "task",
    "fieldtype": "Check",
    "label": "Task"
+  },
+  {
+   "default": "0",
+   "fieldname": "lead",
+   "fieldtype": "Check",
+   "label": "Lead"
+  },
+  {
+   "default": "0",
+   "fieldname": "email_template",
+   "fieldtype": "Check",
+   "label": "Email Template"
+  },
+  {
+   "fieldname": "column_break_pkip",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-12-16 10:06:53.226571",
+ "modified": "2025-01-09 09:59:26.490691",
  "modified_by": "Administrator",
  "module": "Validation",
  "name": "Automation Settings",

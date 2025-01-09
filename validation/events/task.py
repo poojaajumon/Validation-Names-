@@ -1,23 +1,41 @@
 import frappe
+import re
 
+@frappe.whitelist()
 def before_save(doc, method):
-    """
-    This function will handle the before_save logic for the Project doctype.
-    """
-    # Check if custom_automate is disabled (0 or None)
-    if not doc.get("custom_automate"):
-        # Fetch dictionary corrections
-        corrections = {d.found_word: d.actual_word for d in frappe.get_all(
-            "Dictionary", fields=["found_word", "actual_word"]
-        )}
+    try:
+    
+        automation_settings = frappe.get_value("Automation Settings", None, "task")
+        if not automation_settings or int(automation_settings) != 1:
+            return 
 
-        if corrections:
-            # Update the project_name if it contains a found_word
-            if doc.get("subject"):
-                original_name = doc.get("subject")
+        if doc.get("custom_automate") != 0:
+            return  # Exit if custom automation is not disabled
+
+        # Log that the function has started
+        frappe.log_error("before_save function started ", "before_save Log")
+
+        # Fetch dictionary entries for corrections
+        corrections = {}
+        dictionary_entries = frappe.get_all("Dictionary", fields=["found_word", "actual_word"])
+
+        for entry in dictionary_entries:
+            corrections[entry["found_word"]] = entry["actual_word"]
+
+        # Fields to check and correct
+        fields_to_check = ["subject"]
+
+        for field in fields_to_check:
+            field_value = doc.get(field)
+            if field_value:
+                updated_value = field_value
                 for incorrect, corrected in corrections.items():
-                    original_name = original_name.replace(incorrect, corrected)
-                doc.set("subject", original_name)
+                    updated_value = re.sub(r'\b' + re.escape(incorrect) + r'\b', corrected, updated_value)
+                doc.set(field, updated_value)
 
-                # Log a message for debugging or user feedback
-                frappe.msgprint(f"Subject updated to: {original_name}")
+        # Log the changes made
+        frappe.log_error(f"Updated fields: {fields_to_check}", "before_save Log")
+
+    except Exception as e:
+        # Log any errors that occur during the process
+        frappe.log_error(f"Error in before_save method: {str(e)}", "before_save Error")

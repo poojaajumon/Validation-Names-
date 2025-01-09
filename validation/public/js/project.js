@@ -1,236 +1,228 @@
 frappe.ui.form.on('Project', {
-    onload: function(frm) {
-        if (frm.is_new()) {
-            console.log("Form is new. Initializing custom_automate.");
-            frm.set_value('custom_automate', 0); // Disable custom_automate for new forms
-        }
-    },
-
-    project_name: function(frm) {
-        if (!frm.doc.custom_automate) {
-            console.log("Projetc name trigger activated and custom_automate is disabled");
-            check_automation_enabled(frm, function(is_enabled) {
-                console.log("Automation check result:", is_enabled);
-                if (is_enabled) {
-                    const formatted_name = format_name(frm.doc.project_name);
-                    console.log("Formatted Name:", formatted_name);
-                    frm.set_value('project_name', formatted_name);
+    before_save: function (frm) {
+        check_automation_enabled(frm, function (is_enabled) {
+            if (is_enabled === 1) {  // Proceed only if automation is enabled
+                console.log("Automation enabled. Proceeding with before_save logic.");
+                if (frm.is_new() && !frm.doc.custom_automate) {
+                    console.log("Before Save: Initializing custom_automate to 0 for new records.");
+                    frm.set_value('custom_automate', 0); // Initialize custom_automate
                 }
-            });
-        } else {
-            console.log("custom_automate is enabled. Skipping Project Name trigger.");
-        }
+
+                if (!frm.doc.custom_automate) {
+                    if (frm.doc.project_name) frm.set_value('project_name', format_name(frm.doc.project_name));
+                    if (frm.doc.notes) frm.set_value('notes', format_description(frm.doc.notes));
+                } else {
+                    console.log("custom_automate is enabled. Skipping field formatting.");
+                }
+            } else {
+                console.log("Automation not enabled. Skipping before_save logic.");
+            }
+        });
     },
 
-    after_save: function(frm) {
-        if (!frm.doc.custom_automate) {
-            console.log("After Save: Enabling custom_automate");
-            frm.set_value('custom_automate', 1); // Enable custom_automate after the first save
+    after_save: function (frm) {
+        check_automation_enabled(frm, function (is_enabled) {
+            if (is_enabled === 1) {  // Proceed only if automation is enabled
+                console.log("Automation enabled. Proceeding with after_save logic.");
+                if (frm.doc.custom_automate === 0) {
+                    console.log("After Save: Enabling custom_automate.");
+                    frm.set_value('custom_automate', 1);
+                    frm.save()
+                        .then(() => {
+                            console.log("custom_automate has been enabled and saved.");
+                            frappe.msgprint({
+                                title: 'Edit Fields',
+                                message: `
+                                    <p>Now you can edit the following fields manually:</p>
+                                    <b>Project Name</b>
+                                `,
+                                indicator: 'blue',
+                            });
+                        })
+                        .catch((error) => console.error("Error while saving the form after enabling custom_automate:", error));
+                }
+            } else {
+                console.log("Automation not enabled. Skipping after_save logic.");
+            }
+        });
+    },
 
-            // Save the form again to persist the change
-            frm.save()
-                .then(() => {
-                    console.log("custom_automate has been enabled and saved.");
-                })
-                .catch((error) => {
-                    console.error("Error while saving the form after enabling custom_automate:", error);
-                });
-        }
-    }
+    refresh: function (frm) {
+        check_automation_enabled(frm, function (is_enabled) {
+            if (is_enabled === 1) {  // Proceed only if automation is enabled
+                console.log("Automation enabled. Proceeding with refresh logic.");
+                if (!frm.is_new()) {
+                    frm.add_custom_button('Add to Dictionary', function () {
+                        if (frm.has_been_confirmed) {
+                            frappe.msgprint({
+                                title: 'Info',
+                                message: 'Changes have already been added to the Dictionary.',
+                                indicator: 'blue',
+                            });
+                            return;
+                        }
+
+                        let modified_fields = [];
+
+                        ['project_name'].forEach((field) => {
+                            const formatted_value = format_name(frm.doc[field]);
+                            const current_value = frm.doc[field];
+                            const original_value = frm.doc.__unsaved_values?.[field] || null;
+
+                            if (formatted_value && formatted_value !== current_value) {
+                                modified_fields.push({
+                                    fieldname: field,
+                                    found_word: original_value || formatted_value,
+                                    actual_word: current_value || '',
+                                    checked: false
+                                });
+                            }
+                        });
+
+                        if (modified_fields.length === 0) {
+                            frappe.msgprint({
+                                title: 'No Changes',
+                                message: 'No fields have been modified.',
+                                indicator: 'red',
+                            });
+                            return;
+                        }
+
+                        let fields_html = modified_fields.map(field => `
+                            <div>
+                                <input type="checkbox" id="${field.fieldname}" checked="${field.checked}">
+                                <label for="${field.fieldname}">${field.fieldname} :</label>
+                                <span>Found Word: "${field.found_word}", Actual Word: "${field.actual_word}"</span>
+                            </div>`).join('');
+
+                        frappe.confirm(
+                            `<div>
+                                ${fields_html}
+                                <br><br>
+                                Do you want to add these changes to the Dictionary?
+                            </div>`,
+                            function () {
+                                modified_fields.forEach(field => {
+                                    if (document.getElementById(field.fieldname).checked) {
+                                        frappe.call({
+                                            method: 'frappe.client.insert',
+                                            args: {
+                                                doc: {
+                                                    doctype: 'Dictionary',
+                                                    found_word: field.found_word,
+                                                    actual_word: field.actual_word,
+                                                },
+                                            },
+                                            callback: function (response) {
+                                                console.log('Dictionary Entry Saved:', response);
+                                            },
+                                            error: function (error) {
+                                                console.error('Error saving to Dictionary:', error);
+                                            },
+                                        });
+                                    }
+                                });
+
+                                frappe.msgprint({
+                                    title: 'Success',
+                                    message: 'Selected changes have been added to Dictionary.',
+                                    indicator: 'green',
+                                });
+
+                                frm.has_been_confirmed = true;  // Set flag to prevent reappearance
+                            },
+                            function () {
+                                frappe.msgprint({
+                                    title: 'Cancelled',
+                                    message: 'No changes were added to Dictionary.',
+                                    indicator: 'blue',
+                                });
+                            }
+                        );
+                    });
+
+                    // Reset the has_been_confirmed flag when a new form is loaded
+                    frm.has_been_confirmed = false;
+                }
+            } else {
+                console.log("Automation not enabled. Skipping refresh logic.");
+            }
+        });
+    },
 });
 
-function format_name(name) {
-    if (!name) return '';
-
-    // Check if the last character is a space to preserve it during formatting
-    const lastChar = name.slice(-1); 
-    const isSpaceAdded = lastChar === ' ';
-
-    // Remove all special characters except letters and spaces
-    let formattedName = name.replace(/[^a-zA-Z\s]/g, ''); // Keep only letters and spaces
-
-    // Trim, lowercase, capitalize first letter of each word, and remove extra spaces
-    formattedName = formattedName.trim().toLowerCase().replace(/\b(\w)/g, function(match) {
-        return match.toUpperCase();
-    });
-    formattedName = formattedName.replace(/\s+/g, ' '); // Replace multiple spaces with a single space
-    formattedName = formattedName.replace(/\(/g, ' ('); // Ensure space before parentheses
-
-    // Retain the trailing space if the user just typed one
-    if (isSpaceAdded) {
-        formattedName += ' ';
-    }
-
-    return formattedName;
-}
-
 function check_automation_enabled(frm, callback) {
-    console.log("Checking automation enabled status");
     frappe.call({
         method: 'frappe.client.get_value',
         args: {
             doctype: 'Automation Settings',
-            fieldname: 'project'
-        },
-        callback: function(response) {
-            console.log("Automation Settings response:", response);
-            const is_enabled = response.message ? response.message.project : false;
-            callback(is_enabled);
-        }
-    });
-}
-
-
-frappe.ui.form.on("Project", {
-
-    onload: function(frm) {
-        if (frm.is_new()) {
-            console.log("script loaded")
-            frm.set_value('custom_automate', 0); // Set custom_automate to 0 for new forms
-        }
-
-        if (!frm.doc.custom_automate) {
-            checkAutomationEnabled(frm, function(is_enabled) {
-                if (is_enabled) {
-                    applyTitleCorrections(frm);
-                }
-            });
-        }
-    },
-
-    // Triggered when the termsfield is changed
-    project_type: function(frm) {
-        // Check if the dialog has been shown already
-        if (!frm.dialog_shown) {
-            frappe.confirm(
-                'Do you want to create a new dictionary entry for project name?',
-                function() {
-                    // If user confirms, show the custom dialog box for adding a dictionary entry
-                    const dialog = new frappe.ui.Dialog({
-                        title: 'Edit or Add Dictionary Entry',
-                        fields: [
-                            {
-                                fieldtype: 'Data',
-                                fieldname: 'found_word',
-                                label: 'Found Word',
-                                reqd: 1,
-                            },
-                            {
-                                fieldtype: 'Data',
-                                fieldname: 'actual_word',
-                                label: 'Actual Word',
-                                reqd: 1,
-                            }
-                        ],
-                        primary_action_label: 'Save',
-                        primary_action(values) {
-                            frappe.call({
-                                method: 'frappe.client.insert',
-                                args: {
-                                    doc: {
-                                        doctype: 'Dictionary',
-                                        found_word: values.found_word,
-                                        actual_word: values.actual_word,
-                                    }
-                                },
-                                callback: function(response) {
-                                    if (response.message) {
-                                        frappe.msgprint('Dictionary entry saved successfully!');
-                                        dialog.hide();
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    dialog.show();
-
-                    // Set flag to ensure the dialog is not shown again
-                    frm.dialog_shown = true;
-                },
-                function() {
-                    // If user declines, log or perform another action
-                    console.log("User declined to add a dictionary entry.");
-                }
-            );
-        }
-    },
-
-    // When the form is saved, apply the dictionary corrections to the title field
-    save: function(frm) {
-        if (!frm.doc.custom_automate) {
-            checkAutomationEnabled(frm, function(is_enabled) {
-                if (is_enabled) {
-                    applyTitleCorrections(frm);
-
-                    // After applying corrections, set custom_automate to 1
-                    frm.set_value('custom_automate', 1);
-
-                    // Save the form to persist changes
-                    frm.save()
-                        .then(() => {
-                            console.log("custom_automate has been enabled and saved.");
-                        })
-                        .catch((error) => {
-                            console.error("Error while saving the form:", error);
-                        });
-                }
-            });
-        }
-    },
-
-    project_name: function(frm) {
-        if (!frm.doc.custom_automate) {
-            checkAutomationEnabled(frm, function(is_enabled) {
-                if (is_enabled) {
-                    applyTitleCorrections(frm);
-                }
-            });
-        }
-    }
-});
-
-function applyTitleCorrections(frm) {
-    frappe.call({
-        method: "frappe.client.get_list",
-        args: {
-            doctype: "Dictionary",
-            fields: ["found_word", "actual_word"],
-        },
-        callback: function(response) {
-            if (response.message) {
-                const corrections = response.message.reduce((acc, d) => {
-                    acc[d.found_word] = d.actual_word;
-                    return acc;
-                }, {});
-
-                if (corrections) {
-                    const field = "project_name";
-                    if (frm.doc[field]) {
-                        let updated_name = frm.doc[field];
-                        for (const [incorrect, corrected] of Object.entries(corrections)) {
-                            updated_name = updated_name.replace(incorrect, corrected);
-                        }
-                        frm.set_value(field, updated_name);
-                    }
-                }
-            }
-        },
-    });
-}
-
-// Function to check if automation is enabled globally
-function checkAutomationEnabled(frm, callback) {
-    frappe.call({
-        method: 'frappe.client.get_value',
-        args: {
-            doctype: 'Automation Settings', 
             fieldname: 'project',
         },
         callback: function(response) {
-            const is_enabled = response.message ? response.message.projetc: false;
+            console.log("Automation Settings Response:", response);
+            const is_enabled = response.message && response.message.project ? parseInt(response.message.project, 10) : 0; // Ensure numeric value
             callback(is_enabled);
-        }
+        },
     });
+}
+
+function format_name(name) {
+    if (!name) return '';
+    // Check if the name exceeds the character limit
+    if (name.length > 30) {
+        alert('Project Name length is limited to 30 characters');
+        return ''; // Exit the function if the name is too long
+    }
+
+    // Remove all special characters except letters, digits, hyphen, underscore, comma, brackets, and slashes
+    let formattedName = name.replace(/[^a-zA-Z0-9\s\-,_\(\)\[\]\/\\]/g, ''); // Allow letters, digits, space, hyphen, underscore, comma, brackets, and slashes
+
+    // Trim leading/trailing spaces and normalize multiple spaces between words
+    formattedName = formattedName.trim().replace(/\s+/g, ' ');
+
+    // Handle spaces before and after punctuation and brackets
+    formattedName = formattedName.replace(/\s*(?=\()|\s*(?=\[)/g, '');   // Remove space before opening brackets
+    formattedName = formattedName.replace(/\s*(?=\))|\s*(?=\])/g, '');   // Remove space after closing brackets
+    formattedName = formattedName.replace(/\s*(?=\,)/g, '');             // Remove space before commas
+
+    // Capitalize the first letter of each word and keep the other letters in lowercase
+    formattedName = formattedName.toLowerCase().replace(/\b(\w)/g, function(match) {
+        return match.toUpperCase(); // Capitalize first letter of each word
+    });
+
+    // Return the formatted name
+    return formattedName;
+}
+
+
+// Function to format notes
+function format_description(description) {
+    if (!description) {
+        console.log("No description provided for formatting.");
+        return '';
+    }
+
+    // Log the original description for debugging
+    console.log("Original description:", description);
+
+    // Strip HTML content and trim spaces
+    let strippedDescription = description.replace(/<\/?[^>]+(>|$)/g, "").trim(); // Remove HTML tags
+
+    if (!strippedDescription) {
+        console.log("No text content found after stripping HTML.");
+        return description; // Return the original description if it's empty after stripping
+    }
+
+    // Convert to sentence case
+    let formattedDescription = strippedDescription.toLowerCase();
+    formattedDescription =
+        formattedDescription.charAt(0).toUpperCase() + formattedDescription.slice(1); // Capitalize the first letter
+
+    // Log the formatted description
+    console.log("Formatted description:", formattedDescription);
+
+    // Return the formatted description, re-wrapped in the same HTML format as the original
+    return `<div class="ql-editor read-mode"><p>${formattedDescription}</p></div>`;
 }
 
 
@@ -238,16 +230,12 @@ function checkAutomationEnabled(frm, callback) {
 
 frappe.ui.form.on('Project', {
     refresh: function (frm) {
-       
+     
+        // Add "Dictionary" under the "View" button
         frm.add_custom_button(__('Dictionary'), function () {
-            
+            // Navigate to the Dictionary List View
             frappe.set_route('List', 'Dictionary');
-        }, __('View'));
-
-        // Add a button to create a new Dictionary in the Create section
-        frm.add_custom_button(__('Dictionary'), function () {
-            // Open a new Dictionary document form
-            frappe.new_doc('Dictionary');
-        }, __('Create'));
+        }, __('View')); // Nest under "View"
     }
 });
+
