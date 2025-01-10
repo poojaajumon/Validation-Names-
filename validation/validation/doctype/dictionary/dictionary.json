@@ -8,7 +8,11 @@
  "field_order": [
   "found_word",
   "column_break_iuez",
-  "actual_word"
+  "actual_word",
+  "column_break_pqcd",
+  "doctype_name",
+  "column_break_ggqw",
+  "pincode"
  ],
  "fields": [
   {
@@ -24,11 +28,29 @@
    "fieldname": "actual_word",
    "fieldtype": "Data",
    "label": "Actual Word"
+  },
+  {
+   "fieldname": "column_break_pqcd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "doctype_name",
+   "fieldtype": "Data",
+   "label": "DocType Name"
+  },
+  {
+   "fieldname": "column_break_ggqw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Data",
+   "label": "Pincode"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-12-07 14:09:07.531887",
+ "modified": "2025-01-10 10:34:26.456002",
  "modified_by": "Administrator",
  "module": "Validation",
  "name": "Dictionary",

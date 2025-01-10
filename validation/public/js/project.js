@@ -111,6 +111,7 @@ frappe.ui.form.on('Project', {
                                                     doctype: 'Dictionary',
                                                     found_word: field.found_word,
                                                     actual_word: field.actual_word,
+                                                    doctype_name: frm.doc.doctype 
                                                 },
                                             },
                                             callback: function (response) {

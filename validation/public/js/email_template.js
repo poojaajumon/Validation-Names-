@@ -111,6 +111,7 @@ frappe.ui.form.on('Email Template', {
                                                     doctype: 'Dictionary',
                                                     found_word: field.found_word,
                                                     actual_word: field.actual_word,
+                                                    doctype_name: frm.doc.doctype 
                                                 },
                                             },
                                             callback: function (response) {

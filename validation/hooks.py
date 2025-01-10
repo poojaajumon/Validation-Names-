@@ -56,7 +56,9 @@ doctype_js = {
     "Project" : "public/js/project.js",
     "Task" : "public/js/task.js",
     "Lead" : "public/js/lead.js",
-    "Email Template" : "public/js/email_template.js"
+    "Email Template" : "public/js/email_template.js",
+    "Address" : "public/js/pincode_api.js",
+    "Employee" : "public/js/employee_address_filling.js"
     
 }
 

@@ -24,7 +24,7 @@ def before_save(doc, method):
             corrections[entry["found_word"]] = entry["actual_word"]
 
         # Fields to check and correct
-        fields_to_check = ["address_line1"]
+        fields_to_check = ["address_line1", "custom_taluk"]
 
         for field in fields_to_check:
             field_value = doc.get(field)
