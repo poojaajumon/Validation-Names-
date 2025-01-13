@@ -7,7 +7,6 @@
  "field_order": [
   "enable_automation_for_section",
   "customer",
-  "supplier",
   "employee",
   "column_break_jhni",
   "contact",
@@ -33,13 +32,7 @@
    "default": "0",
    "fieldname": "customer",
    "fieldtype": "Check",
-   "label": "Customer"
-  },
-  {
-   "default": "0",
-   "fieldname": "supplier",
-   "fieldtype": "Check",
-   "label": "Supplier"
+   "label": "Customer/Supplier"
   },
   {
    "default": "0",
@@ -121,7 +114,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-01-09 09:59:26.490691",
+ "modified": "2025-01-13 11:31:16.260291",
  "modified_by": "Administrator",
  "module": "Validation",
  "name": "Automation Settings",
