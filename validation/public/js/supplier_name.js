@@ -157,11 +157,11 @@ function check_automation_enabled(frm, callback) {
         method: 'frappe.client.get_value',
         args: {
             doctype: 'Automation Settings',
-            fieldname: 'supplier',
+            fieldname: 'customer',
         },
         callback: function(response) {
             console.log("Automation Settings Response:", response);
-            const is_enabled = response.message && response.message.supplier ? parseInt(response.message.supplier, 10) : 0; // Ensure numeric value
+            const is_enabled = response.message && response.message.customer ? parseInt(response.message.customer, 10) : 0; // Ensure numeric value
             callback(is_enabled);
         },
     });
