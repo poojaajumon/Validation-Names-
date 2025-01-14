@@ -52,7 +52,8 @@ doctype_js = {
     "Employee" : "public/js/employee_name.js",
     "Item" : "public/js/item_name.js",
     "Item Group" : "public/js/item_group.js",
-    "Terms and Conditions" : "public/js/terms_conditions.js",
+    "Terms and Conditions" : ["public/js/terms_conditions.js",
+                              "public/js/grammar_terms.js"],
     "Project" : "public/js/project.js",
     "Task" : "public/js/task.js",
     "Lead" : "public/js/lead.js",
@@ -159,7 +160,8 @@ doctype_js = {
 
 doc_events = {
     "Item": {
-        "before_save": "validation.events.item.before_save"
+        "before_save": "validation.events.item.before_save",
+        "before_save": "validation.events.item_grammar.correct_grammar"
     },
      "Customer": {
         "before_save": "validation.events.customer.before_save"
@@ -180,19 +182,23 @@ doc_events = {
         "before_save": "validation.events.employee.before_save"
     },
     "Terms and Conditions": {
-        "before_save": "validation.events.terms_conditions.before_save"
+        "before_save": "validation.events.terms_conditions.before_save",
+        "before_save": "validation.events.grammar_terms.correct_grammar"
     },
     "Project" : {
-        "before_save" : "validation.events.project.before_save"
+        "before_save" : "validation.events.project.before_save",
+        "before_save": "validation.events.project_notes_grammar.correct_grammar"
     },
     "Task" : {
-        "before_save" : "validation.events.task.before_save"
+        "before_save" : "validation.events.task.before_save",
+        "before_save" : "validation.events.task_grammar.correct_grammar"
     },
     "Lead" : {
         "before_save" : "validation.events.lead.before_save"
     },
     "Email Template" : {
-        "before_save" : "validation.events.email_template.before_save"
+        "before_save" : "validation.events.email_template.before_save",
+        "before_save": "validation.events.response_email_template_grammar.correct_grammar"
     }
     
 }

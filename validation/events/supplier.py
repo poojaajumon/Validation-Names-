@@ -4,7 +4,7 @@ import re
 @frappe.whitelist()
 def before_save(doc, method):
     try:
-        automation_settings = frappe.get_value("Automation Settings", None, "supplier")
+        automation_settings = frappe.get_value("Automation Settings", None, "customer")
         if not automation_settings or int(automation_settings) != 1:
             return  
 
